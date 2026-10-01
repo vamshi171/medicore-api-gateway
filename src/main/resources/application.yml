@@ -1,0 +1,114 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      # JWT and role filters are attached per-route below: public routes simply
+      # omit them, which keeps whitelisting declarative and reviewable.
+      routes:
+        # ---------- AUTH SERVICE ----------
+        - id: auth-public
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/register,/api/auth/login
+
+        - id: auth-admin
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/users,/api/auth/users/**
+          filters:
+            - Jwt
+            - RoleAuth=ADMIN
+
+        - id: patient-admin-list
+          uri: lb://PATIENT-SERVICE
+          predicates:
+            - Path=/api/patients
+          filters:
+            - Jwt
+            - RoleAuth=ADMIN
+
+        - id: patient-admin-detail
+          uri: lb://PATIENT-SERVICE
+          predicates:
+            - Path=/api/patients/{id}/status
+          filters:
+            - Jwt
+            - RoleAuth=ADMIN
+
+        - id: auth-me
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/me,/api/auth/me/**
+          filters:
+            - Jwt
+
+        # ---------- PATIENT SERVICE ----------
+        # (internal/** is called service-to-service via Eureka, not through the gateway)
+        # list + status routes above are ADMIN-only; everything else under /patients is PATIENT self-service
+        - id: patient-secure
+          uri: lb://PATIENT-SERVICE
+          predicates:
+            - Path=/api/patients/**
+          filters:
+            - Jwt
+            - RoleAuth=ADMIN,PATIENT
+
+        # ---------- DOCTOR SERVICE ----------
+        # "me" routes must be declared BEFORE the public /api/doctors/** route,
+        # because {id} path variables would otherwise swallow "/me".
+        - id: doctor-me
+          uri: lb://DOCTOR-SERVICE
+          predicates:
+            - Path=/api/doctors/me,/api/doctors/me/**
+          filters:
+            - Jwt
+            - RoleAuth=DOCTOR
+
+        - id: doctor-public
+          uri: lb://DOCTOR-SERVICE
+          predicates:
+            - Path=/api/doctors,/api/doctors/**
+          filters:
+            - StripPrefix=0
+
+        # ---------- APPOINTMENT SERVICE ----------
+        - id: appointment-secure
+          uri: lb://APPOINTMENT-SERVICE
+          predicates:
+            - Path=/api/appointments,/api/appointments/**
+          filters:
+            - Jwt
+            - RoleAuth=ADMIN,DOCTOR,PATIENT
+
+        # ---------- NOTIFICATION SERVICE ----------
+        - id: notification-secure
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/notifications,/api/notifications/**
+          filters:
+            - Jwt
+            - RoleAuth=ADMIN,DOCTOR,PATIENT
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+medicore:
+  jwt:
+    secret: ${JWT_SECRET:medicore-dev-secret-key-change-me-in-production-0123456789abcdef}
+    clock-skew-seconds: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,gateway
