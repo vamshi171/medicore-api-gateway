@@ -1,5 +1,4 @@
-# Multi-stage is unnecessary here because CI builds jars first; this image
-# just runs the prebuilt Spring Boot jar. Build: mvn clean package -pl <module>
+# Runs the prebuilt Spring Boot jar (build it first: mvn clean package)
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
