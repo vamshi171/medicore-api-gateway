@@ -21,7 +21,9 @@ spring:
             - Path=/api/auth/users,/api/auth/users/**
           filters:
             - Jwt
-            - RoleAuth=ADMIN
+            - name: RoleAuth
+              args:
+                allowedRoles: ADMIN
 
         - id: patient-admin-list
           uri: lb://PATIENT-SERVICE
@@ -29,7 +31,9 @@ spring:
             - Path=/api/patients
           filters:
             - Jwt
-            - RoleAuth=ADMIN
+            - name: RoleAuth
+              args:
+                allowedRoles: ADMIN
 
         - id: patient-admin-detail
           uri: lb://PATIENT-SERVICE
@@ -37,7 +41,9 @@ spring:
             - Path=/api/patients/{id}/status
           filters:
             - Jwt
-            - RoleAuth=ADMIN
+            - name: RoleAuth
+              args:
+                allowedRoles: ADMIN
 
         - id: auth-me
           uri: lb://AUTH-SERVICE
@@ -55,7 +61,9 @@ spring:
             - Path=/api/patients/**
           filters:
             - Jwt
-            - RoleAuth=ADMIN,PATIENT
+            - name: RoleAuth
+              args:
+                allowedRoles: ADMIN,PATIENT
 
         # ---------- DOCTOR SERVICE ----------
         # "me" routes must be declared BEFORE the public /api/doctors/** route,
@@ -66,7 +74,9 @@ spring:
             - Path=/api/doctors/me,/api/doctors/me/**
           filters:
             - Jwt
-            - RoleAuth=DOCTOR
+            - name: RoleAuth
+              args:
+                allowedRoles: DOCTOR
 
         - id: doctor-public
           uri: lb://DOCTOR-SERVICE
@@ -82,7 +92,9 @@ spring:
             - Path=/api/appointments,/api/appointments/**
           filters:
             - Jwt
-            - RoleAuth=ADMIN,DOCTOR,PATIENT
+            - name: RoleAuth
+              args:
+                allowedRoles: ADMIN,DOCTOR,PATIENT
 
         # ---------- NOTIFICATION SERVICE ----------
         - id: notification-secure
@@ -91,7 +103,9 @@ spring:
             - Path=/api/notifications,/api/notifications/**
           filters:
             - Jwt
-            - RoleAuth=ADMIN,DOCTOR,PATIENT
+            - name: RoleAuth
+              args:
+                allowedRoles: ADMIN,DOCTOR,PATIENT
 
 eureka:
   client:
